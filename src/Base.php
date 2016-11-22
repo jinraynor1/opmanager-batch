@@ -2,12 +2,19 @@
 namespace Jinraynor1\OpManager\Batch;
 
 use Jinraynor1\OpManager\Api\Main as ApiMain;
+use splitbrain\phpcli\Exception;
 
 
 class Base {
 
     protected $devices = array();
 
+    /**
+     * Fill device list as requested
+     * @param $type
+     * @param $name
+     * @throws \Exception
+     */
     public function setDevicesBy($type, $name){
 
 
@@ -34,7 +41,7 @@ class Base {
         $response = ApiMain::dispatcher('listDevices',$params);
 
         if(is_array($response) && !empty($response)){
-            $this->$devices =  $response;
+            $this->devices =  $response;
         }elseif(is_object($response) && isset($response->message)){
 
             throw new \Exception($response->message);
@@ -44,5 +51,125 @@ class Base {
 
         }
 
+    }
+
+
+    /**
+     * Returns a valid option from user
+     * @param $message
+     * @param $opt
+     * @param int $maxAskTimes
+     * @param array $validOptions
+     * @return string
+     * @throws \Exception
+     */
+    public function getOptValue($message,$opt,$maxAskTimes=3,$validOptions = array('yes', 'no')){
+
+
+        if(!in_array($opt, $validOptions )){
+            $askTimes=0;
+            do {
+                if($askTimes > $maxAskTimes){
+                    throw new \Exception("Invalid option too many times");
+                }
+                echo $message . '['.implode('|',$validOptions).']: ';
+                $response = chop(fgets(STDIN));
+                $askTimes++;
+
+            } while (!in_array($response, $validOptions));
+
+        }else{
+            $response = $opt;
+        }
+
+        return $response;
+    }
+
+
+
+    /**
+     * Handles response for common requests
+     * @param $response
+     * @param $deviceDisplayName
+     * @param $action
+     * @return array
+     */
+    public function handleCommonResponse($response, $deviceDisplayName, $action)
+    {
+        // if error present
+        if($message = $this->checkCommonErrorResponse($response, $deviceDisplayName, $action)){
+           $result = false;
+        } else {
+            // no error founded
+            $result = true;
+
+            if (isset($response->result) && isset($response->result->message)) {
+                $message = "$deviceDisplayName | " . $response->result->message . "\n";
+            }else{
+                $message = "$deviceDisplayName | operation $action success\n";
+            }
+
+
+        }
+        return array(
+            'result' => $result,
+            'message' => $message,
+            'error_code'=>isset($response->error->code)?$response->error->code:null,
+            'error_message'=>isset($response->error->message)?$response->error->message:null,
+        );
+    }
+
+
+
+
+
+    /**
+     * Parse response from common errors
+     * @param $response
+     * @param $deviceDisplayName
+     * @param $action
+     * @return boolean
+     */
+    public function checkCommonErrorResponse($response, $deviceDisplayName, $action)
+    {
+        $error=false;
+        if (!$response || is_null($response)) {
+
+            $error= "$deviceDisplayName | no response when trying to $action\n";
+
+        }elseif (is_object($response) && isset($response->error)) {
+
+            $error = "$deviceDisplayName | error at $action \n";
+
+            if (isset($response->error->code) && isset($response->error->message)) {
+                $response->error->code;
+                $response->error->message;
+                $error = "$deviceDisplayName | error at $action ,error code: " . $response->error->code . ', error message: ' . $response->error->message . "\n";
+            }
+        }
+
+        return $error;
+    }
+
+    /**
+     * Custom ip validation
+     * @param null $ip
+     * @return bool
+     */
+    public function validate_ip($ip = null)
+    {
+
+        if (!$ip or strlen(trim($ip)) == 0) {
+            return false;
+        }
+
+        $ip = trim($ip);
+        if (preg_match("/^[0-9]{1,3}(.[0-9]{1,3}){3}$/", $ip)) {
+            foreach (explode(".", $ip) as $block)
+                if ($block < 0 || $block > 255)
+                    return false;
+            return true;
+        }
+        return false;
     }
 }
