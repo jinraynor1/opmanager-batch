@@ -54,36 +54,6 @@ class Base {
     }
 
 
-    /**
-     * Returns a valid option from user
-     * @param $message
-     * @param $opt
-     * @param int $maxAskTimes
-     * @param array $validOptions
-     * @return string
-     * @throws \Exception
-     */
-    public function getOptValue($message,$opt,$maxAskTimes=3,$validOptions = array('yes', 'no')){
-
-
-        if(!in_array($opt, $validOptions )){
-            $askTimes=0;
-            do {
-                if($askTimes > $maxAskTimes){
-                    throw new \Exception("Invalid option too many times");
-                }
-                echo $message . '['.implode('|',$validOptions).']: ';
-                $response = chop(fgets(STDIN));
-                $askTimes++;
-
-            } while (!in_array($response, $validOptions));
-
-        }else{
-            $response = $opt;
-        }
-
-        return $response;
-    }
 
 
 

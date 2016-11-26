@@ -15,9 +15,9 @@ define('OPIMPORT_COL_MONITORING', 6); //device monitoring
 define('OPIMPORT_COL_NETMASK', 7); //device netmask
 
 /**
- * Add devices
+ * Supply devices
  */
-class AddDevice extends Base
+class SuplplyDevice extends Base
 {
     /**
      * Debugging
@@ -125,15 +125,19 @@ class AddDevice extends Base
     /**
      * Initialization our dependencies
      * @param array $lines
-     * @param array $syncMode
+     * @param array $options
      */
-    public function __construct($lines = array(), $syncMode = array())
+    public function __construct($lines = array(), $options = array())
     {
         // remove first heading line
-        $this->lines = array_shift($lines);
+        $this->lines = $lines;
 
         // set the sync options
-        $this->syncMode = $syncMode;
+        $this->options = $options;
+
+        if($this->options['debug']){
+            $this->debug = $this->options['debug'];
+        }
 
         // fill dependencies
         $this->getCurrentInventory();
@@ -148,7 +152,7 @@ class AddDevice extends Base
 
 
         // fill credentials names
-        if ($this->syncMode['discoverInterfaces'] || $this->syncMode['add']) {
+        if ($this->options['interfaces'] || $this->options['add']) {
             $credentials = ApiMain::dispatcher('listCredentials');
 
             if (!is_object($credentials) || empty($credentials)) {
@@ -167,7 +171,7 @@ class AddDevice extends Base
 
 
         // fill existing business
-        if ($this->syncMode['addToCustomBusinessView']) {
+        if ($this->options['business-views']) {
             $_businessViews = ApiMain::dispatcher('getBusinessView');
             if (is_object($_businessViews) && isset($_businessViews->BusinessView->Details) && !empty($_businessViews->BusinessView->Details)) {
 
@@ -230,9 +234,8 @@ class AddDevice extends Base
     {
         if (!in_array($this->deviceIp, $this->devicesExist)) {
 
-            if ($this->debug) {
                 $this->opimport_dump('add device', $this->paramsDevice);
-            }
+
             do {
 
                 if ($this->cleared || $this->failAdd) {
@@ -287,9 +290,9 @@ class AddDevice extends Base
                 'deviceName' => $deviceNameDel, //required
             );
 
-            if ($this->debug) {
-                $this->opimport_dump('delete device', $paramsDel);
-            }
+
+            $this->opimport_dump('delete device', $paramsDel);
+
 
             $responseDeviceDel = ApiMain::dispatcher('deleteDevice', $paramsDel);
 
@@ -313,10 +316,7 @@ class AddDevice extends Base
      */
     public function editDevice()
     {
-
-        if ($this->debug) {
-            $this->opimport_dump('update device', $this->paramsDevice);
-        }
+        $this->opimport_dump('update device', $this->paramsDevice);
 
         $responseDeviceEdit = ApiMain::dispatcher('UpdateDeviceDetails', $this->paramsDevice);
         $resultDeviceEdit = $this->handleCommonResponse($responseDeviceEdit, $this->deviceDisplayName, 'update');
@@ -335,9 +335,9 @@ class AddDevice extends Base
             'operStates' => '$SelectAll$'
         );
 
-        if ($this->debug) {
-            $this->opimport_dump('discover interfaces', $paramsDI);
-        }
+
+        $this->opimport_dump('discover interfaces', $paramsDI);
+
 
         $responseDiscoverInterface = ApiMain::dispatcher('discoverInterface', $paramsDI);
         $resultDiscoverInterface = $this->handleCommonResponse($responseDiscoverInterface, $this->deviceDisplayName, 'discover interfaces');
@@ -356,9 +356,9 @@ class AddDevice extends Base
 
             $paramasAddBV = array('bvName' => $bv_name);
 
-            if ($this->debug) {
-                $this->opimport_dump('add new business view', $paramasAddBV);
-            }
+
+            $this->opimport_dump('add new business view', $paramasAddBV);
+
             $responseAddBusinessView = ApiMain::dispatcher('addBusinessView', $paramasAddBV);
 
 
@@ -423,16 +423,14 @@ class AddDevice extends Base
 
                     $paramsAddDeviceToBV = array('deviceName' => implode(',', $devices), 'bvName' => $bv_name);
 
-                    if ($this->debug) {
-                        $this->opimport_dump('associate business view to device', $paramsAddDeviceToBV);
-                    }
+                    $this->opimport_dump('associate business view to device', $paramsAddDeviceToBV);
 
                     $responseAddDeviceToBV = ApiMain::dispatcher('addDeviceToBV', $paramsAddDeviceToBV);
                     $resultAddDeviceToBV = $this->handleCommonResponse($responseAddDeviceToBV, "group $bv_name", "add to business view $bv_name");
 
 
                     if ($resultAddDeviceToBV['error_code'] == '5132' || preg_match('/already exists/i', $resultAddDeviceToBV['error_message'])) {
-                        $this->opimport_msg("group $bv_name | ´device already exists in business view $bv_name ");
+                        $this->opimport_msg("group $bv_name | ï¿½device already exists in business view $bv_name ");
                     } else {
                         $this->opimport_msg($resultAddDeviceToBV['message']);
                     }
@@ -545,7 +543,7 @@ class AddDevice extends Base
             }
 
             // if discovering or adding then we needed to specify credentials
-            if ($this->syncMode['discoverInterfaces'] || $this->syncMode['add']) {
+            if ($this->options['interfaces'] || $this->options['add']) {
                 $this->paramsDevice['credentialName'] = implode(',', $this->credentialName);
             }
 
@@ -553,19 +551,19 @@ class AddDevice extends Base
 
 
             // if the device must be deleted
-            if ($this->syncMode['clear']) {
+            if ($this->options['delete']) {
                 $this->deleteDevice();
             }
 
 
             // if the devices must be added and the attempt failed then go to next item
-            if ($this->syncMode['add'] && $this->addDevice() === false) {
+            if ($this->options['add'] && $this->addDevice() === false) {
                 continue;
             }
 
 
             // if any of these operations is needed then we must get the device name from opmanager
-            if ($this->syncMode['discoverInterfaces'] || $this->syncMode['edit'] || $this->syncMode['addToCustomBusinessView']) {
+            if ($this->options['interfaces'] || $this->options['update'] || $this->options['business-views']) {
 
 
                 if (in_array($this->deviceIp, $this->devicesExist)) { // if the device is in the list of existing devices
@@ -595,12 +593,12 @@ class AddDevice extends Base
             }
 
             // do discover if needed
-            if ($this->syncMode['discoverInterfaces']) {
+            if ($this->options['interfaces']) {
                 $this->discoverInterfaces();
             }
 
             // do edit if needed
-            if ($this->syncMode['edit']) {
+            if ($this->options['update']) {
 
                 // set the name as in opmanager
                 $this->paramsDevice['name'] = $this->deviceName;
@@ -623,7 +621,7 @@ class AddDevice extends Base
             }
 
             // do add business view if needed
-            if ($this->syncMode['addToCustomBusinessView'] && !empty($deviceBusinessView) && is_array($deviceBusinessView)) {
+            if ($this->options['business-views'] && !empty($deviceBusinessView) && is_array($deviceBusinessView)) {
                 foreach ($deviceBusinessView as $bv_name) {
                     // add the view
                     $this->addBusinessView($bv_name);
@@ -661,43 +659,12 @@ class AddDevice extends Base
 
     function opimport_dump($type, $vars)
     {
-        $jsonvars = json_encode($vars);
-        echo "\033[33m[DEBUG]\033[0m $type variables: $jsonvars\n";
+        if($this->debug){
+            $jsonvars = json_encode($vars);
+            echo "\033[33m[DEBUG]\033[0m $type variables: $jsonvars\n";
+        }
     }
 
-    function opimport_usage()
-    {
-        echo "\n";
-        echo "Descripcion:\nEsta herramientra agrega nodos(dispositivos)al OpManager.\n\n";
-        echo "Lista de parametros: \n";
-        echo "\t--type    Tipo de entrada acepta los valores 'file' o 'input'\n";
-        echo "\t--file    Ubicacion del archivo que desea procesar\n";
-        echo "\t--row    Fila a procesar, puede especificar este parametro mas de 1 vez\n";
-        echo "\t--debug  Mostrar los parametros al procesar un dispositivo\n";
-        echo "Opciones para el flujo de la importacion, si no especifica una se preguntara por ella: \n";
-        echo "\t--del    Desea eliminar el dispositivo existente antes de agregar\n";
-        echo "\t--add    Desea agregar el dispositivo\n";
-        echo "\t--upd    Desea actualizar propiedades del dispositivo\n";
-        echo "\t--dis    Especifica si se debe descubir interfaces del disposirvo\n";
-        echo "\t--bv    Especifica si se debe agregar cada dispositivo a  business view\n";
 
-
-        echo "\nEstructura del archivo:\n";
-        echo "\tIp,Nombre,Marca,Vista(s),Categoria,Tipo,Monitoring,Netmask \n";
-        echo "\t127.0.0.1,localhost,Windows 8,VISTA1;VISTA2,MiCategoria,Mitipo,5,255.255.255.0\n";
-        echo "\t192.168.1.1,gestornap,Cisco,VISTA3,Server,Mitipo2,15,255.255.255.0\n";
-
-
-        echo "\nEjemplos:\n";
-        echo "\t\n\nAgregar mediante archivo:\n\n";
-        echo "\t" . 'php ' . basename(__FILE__) . ' --type=file --file=../archivo.csv' . "\n";
-
-        echo "\t\n\nAgregar mediante archivo y especificando opciones:\n\n";
-        echo "\t" . 'php ' . basename(__FILE__) . ' --type=file --file=../archivo.csv --del=no --add=si --upd=si --dis=si --bv=no' . "\n";
-
-
-        echo "\n\nAgregar especificando fila:\n\n";
-        echo "\t" . 'php ' . basename(__FILE__) . ' --type=input --row="127.0.0.1,localhost,Windows 8,VISTA1;VISTA2,MiCategoria,Mitipo,5,255.255.255.0" --row="192.168.1.1,gestornap,Cisco,VISTA3,Server,Mitipo2,15,255.255.255.0"' . "\n";
-    }
 
 }
