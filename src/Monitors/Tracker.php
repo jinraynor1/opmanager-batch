@@ -6,7 +6,7 @@ namespace Jinraynor1\OpManager\Batch\Monitors;
  * Class MonitorTracker
  * @package Jinraynor1\OpManager\Batch\Monitors
  */
-class MonitorTracker
+class Tracker
 {
 
     protected $db;
@@ -18,7 +18,7 @@ class MonitorTracker
 
 
         //inicializar db
-        $this->db = new \SQLite3($config['database'], SQLITE3_OPEN_READWRITE) or die('No se pudo abrir la base de datos sqlite');
+        $this->db = new \SQLite3($config['database'], SQLITE3_OPEN_READWRITE) or die("No se pudo abrir la base de datos {$config['database']} sqlite");
 
         //concurrencia db
         $this->db->busyTimeout($config['busyTimeout']);

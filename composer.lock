@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "fd0cdf1539777318a80e21bb024a9cdc",
-    "content-hash": "ef669de1ce56bb100b77ee15e5bd92c9",
+    "hash": "66c9d0b7226c0d937fe1b9a0b6a0a96a",
+    "content-hash": "2f8d20007e9b179dc8af311a23612008",
     "packages": [
         {
             "name": "jinraynor1/opmanager-api",
@@ -39,6 +39,39 @@
             ],
             "description": "API method requests for OpManager",
             "time": "2016-11-17 19:50:54"
+        },
+        {
+            "name": "jinraynor1/threading",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jinraynor1/threading.git",
+                "reference": "b6773201321c6621eaf6ab9dd8e65d7a352f0fa9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jinraynor1/threading/zipball/b6773201321c6621eaf6ab9dd8e65d7a352f0fa9",
+                "reference": "b6773201321c6621eaf6ab9dd8e65d7a352f0fa9",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Jinraynor1\\Threading\\Pcntl\\": "src/Jinraynor1/Threading/Pcntl"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "authors": [
+                {
+                    "name": "Jimmy Atauje Hidalgo",
+                    "email": "jimmy.addiction@gmail.com"
+                }
+            ],
+            "description": "simulate threads",
+            "time": "2016-08-25 16:41:00"
         },
         {
             "name": "kevinlebrun/colors.php",
@@ -190,7 +223,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "jinraynor1/opmanager-api": 20
+        "jinraynor1/opmanager-api": 20,
+        "jinraynor1/threading": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,

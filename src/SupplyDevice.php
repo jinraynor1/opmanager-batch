@@ -17,7 +17,7 @@ define('OPIMPORT_COL_NETMASK', 7); //device netmask
 /**
  * Supply devices
  */
-class SuplplyDevice extends Base
+class SupplyDevice extends Base
 {
     /**
      * Debugging

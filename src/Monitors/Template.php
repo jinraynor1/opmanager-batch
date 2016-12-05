@@ -8,7 +8,7 @@ use Jinraynor1\OpManager\Api\Main as ApiMain;
  * Class MonitorTemplate
  * @package Jinraynor1\OpManager\Batch\Monitors
  */
-class MonitorTemplate{
+class Template{
 
     private $deviceName; //done
     private $_base_template = false; //done

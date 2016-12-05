@@ -2,12 +2,14 @@
 namespace Jinraynor1\OpManager\Batch;
 
 use Jinraynor1\OpManager\Api\Main as ApiMain;
-use splitbrain\phpcli\Exception;
-
 
 class Base {
 
     protected $devices = array();
+
+    public function getDevices(){
+        return $this->devices;
+    }
 
     /**
      * Fill device list as requested

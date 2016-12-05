@@ -64,7 +64,14 @@ $cmd->option('type')
 
     ->option('business-views')
     ->boolean()
-    ->describedAs("Process busines view field");
+    ->describedAs("Process business view field")
+
+    ->option('threads')
+    ->default(1)
+    ->must(function ($threads) use ($cmd){
+        return ctype_digit($threads);
+    })
+    ->describedAs("Number of threads for this job");;
 
 // get lines
 $lines = array();
@@ -115,7 +122,7 @@ $options = array(
 
 
 try {
-    $obj = new Jinraynor1\OpManager\Batch\AddDevice($lines, $options);
+    $obj = new Jinraynor1\OpManager\Batch\SupplyDevice($lines, $options);
     $obj->run();
 } catch (Exception $e) {
     echo $e->getMessage() . "\n";

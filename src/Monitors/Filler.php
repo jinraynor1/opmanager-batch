@@ -6,7 +6,7 @@ namespace Jinraynor1\OpManager\Batch\Monitors;
  * Class MonitorFiller
  * @package Jinraynor1\OpManager\Batch\Monitors
  */
-class MonitorFiller
+class Filler
 {
     private $deviceName = null; //done
     private $deviceSummary = null; //done

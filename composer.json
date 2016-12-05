@@ -2,7 +2,8 @@
   "require": {
     "jinraynor1/opmanager-api": "dev-master",
     "nategood/commando": "^0.2.9",
-    "splitbrain/php-cli": "^1.0"
+    "splitbrain/php-cli": "^1.0",
+    "jinraynor1/threading": "dev-master"
   },
   "autoload": {
     "psr-4": {"Jinraynor1\\OpManager\\Batch\\": "src"}

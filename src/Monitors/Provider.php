@@ -2,6 +2,8 @@
 namespace Jinraynor1\OpManager\Batch\Monitors;
 
 use Jinraynor1\OpManager\Api\Main as ApiMain;
+use Jinraynor1\OpManager\Batch\Base;
+
 /**
  * Provides of custom monitors to a device
  *
@@ -12,7 +14,7 @@ use Jinraynor1\OpManager\Api\Main as ApiMain;
  *
  */
 
-class MonitorProvider
+class Provider extends Base
 
 {
 
@@ -33,6 +35,7 @@ class MonitorProvider
     private $sysOID = array();
     private $readCommunity = array();
 
+    private $threads = 1;
 
     /** @var MonitorFiller */
     private $monitorFiller;
@@ -57,51 +60,38 @@ class MonitorProvider
 
 
 
+    public function __construct($deviceName, $config ){
 
-
-    public function initialize($config,$deviceName){
-
-
-
-
-        $this->config = $config;
         $this->deviceName = $deviceName;
 
 
         //inicializar ficheros para guardar logs
-        $dirname = __ROOT_PATH__ . '/logs';
+        $dirname = __DIR__ . '../../../logs/monitors';
 
         if (!file_exists($dirname) || !is_dir($dirname)) {
             mkdir($dirname);
         }
 
+
         $this->logHandler = fopen("$dirname/$this->deviceName.log", 'a');
 
+
+    }
+
+    public function run()
+    {
+
+
         if(!is_object($this->monitorFiller)){
-            throw new Exception("Debes invocar al metodo setMonitorFiller");
+            throw new \Exception("Debes invocar al metodo setMonitorFiller");
         }
 
         if(!is_object($this->monitorTemplate)){
-            throw new Exception("Debes invocar al metodo setmonitorTemplate");
+            throw new \Exception("Debes invocar al metodo setmonitorTemplate");
         }
 
         $this->monitorFiller->setLogHandler($this->logHandler);
         $this->monitorTemplate->setLogHandler($this->logHandler);
-
-
-
-
-        return $this;
-    }
-
-
-    /**
-     *
-     * @param $this ->deviceName
-     */
-    public function run()
-    {
-
 
 
         //validar dispositivo
@@ -306,12 +296,7 @@ class MonitorProvider
         //Credenciales para obtener datos del dispositvo
         $credentialsList = ApiMain::dispatcher('GetCredentialsForDevice', array('name' => $this->deviceName));
 
-        //OpManager devuelve vacio por intervalos al consultar credenciales, en ese caso recaer en la informacion local
-        if (is_null($credentialsList) || !$credentialsList) {
-            $this->log("las credenciales se obtendra de manera local");
-            $credentialsList = getHardCredentials();
 
-        }
         if (is_object($credentialsList) && isset($credentialsList->error)) {
 
             $this->log("error al obtener las credenciales");
@@ -331,13 +316,6 @@ class MonitorProvider
 
                 $credentialDetails = ApiMain::dispatcher('getCredentialDetails', array('credentialName' => $_credential->credentialName, 'type' => $_credential->type));
 
-                // OpManager devuelve vacio por intervalos al consultar credenciales, en ese caso recaer en la informacion local
-
-                if (is_null($credentialDetails) || !$credentialDetails) {
-                    $this->log("detalles de  credencial  ".$_credential->credentialName." se obtendra de manera local");
-                    $credentialsList = getHardCredentialDetail($_credential->credentialName);
-
-                }
 
                 if (is_object($credentialDetails) && isset($credentialDetails->error)) {
 

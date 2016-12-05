@@ -2,66 +2,115 @@
 
 require_once __DIR__ . '/../../bootstrap.php';
 
+use Jinraynor1\OpManager\Batch\Monitors;
+use Jinraynor1\Threading\ThreadQueue;
+
 $cmd = new Commando\Command();
 
 $cmd->useDefaultHelp();
 
-$cmd->setHelp('Discover custom monitors of devices, e.g
+$cmd->setHelp('Supply custom monitors of devices, e.g
 
-        Discover all custom monitors from al devices:
+        Supply all custom monitors from al devices:
                     --mode all-devices
 
-        Discover custommonitors by business view:
+        Supply custommonitors by business view:
                     --mode business-view --name my_business_view_1
 
-        Discover interfaces from single device by name:
+        Supply interfaces from single device by name:
                     --mode single --name cisco_server_1 ');
 
-$cmd->option('m')
-    ->aka('mode')
+
+$cmd->option('mode')
     ->require()
-    ->must(function ($type) {
-        return in_array($type, array('single', 'all-devices', 'business-view'));
+    ->must(function ($mode) {
+        return in_array($mode, array('single', 'all-devices', 'business-view'));
     })
     ->describedAs("Mode for list devices to be updated")
-    ->option('n')
-    ->aka('name')
+
+    ->option('name')
     ->needs(array('mode'))
     ->default('')
-    ->describedAs("Name of business view or device depending on mode selected");
+    ->describedAs("Name of business view or device depending on mode selected")
 
+    ->option('threads')
+    ->default(1)
+    ->must(function ($threads) use ($cmd){
+        return ctype_digit($threads);
+    })
+    ->describedAs("Number of threads for this job");
 
+;
 
 // adjust some resources
 ini_set("memory_limit", "512M");
 
+// include config for monitors
+$config = include_once(__DIR__ . '/../../config/monitors.php');
 
 
 
-
-
-//El dispositivo debe ser pasado como argumento a este script
-$deviceName = isset($argv[1]) ? $argv[1] : false;
-
-$config = include_once(__DIR__ . '/config/monitores.php');
-
-
-$monitorProvider = new MonitorProvider();
-
-$monitorProvider
-    ->setMonitorFiller(new MonitorFiller($config['monitorFiller']))
-    ->setMonitorTemplate(new MonitorTemplate($config['monitorTemplate']))
-    ->setMonitorTracker(new MonitorTracker($config['monitorTracker']));
-
-
-try {
-
-    $monitorProvider
-        ->initialize($config['monitorProvider'], $deviceName)
-        ->run();
-
+// get the devices
+try{
+$base = new \Jinraynor1\OpManager\Batch\Base();
+$base ->setDevicesBy($cmd['mode'],$cmd['name']);
+$devices= $base->getDevices();
 } catch (Exception $e) {
-    echo("Excepcion en el proceso: " . $e->getMessage()."\n");
-    exit(250);
+    echo("Error: " . $e->getMessage()."\n");
+    exit(0);
 
 }
+
+
+/**
+ * Call supply monitors for a device
+ * @param $device
+ * @param $config
+ * @return bool
+ */
+function addMonitor($device,$config){
+
+    try {
+
+
+        $monitorProvider = new Monitors\Provider($device,$config['monitorProvider']);
+
+
+        $monitorProvider
+
+            ->setMonitorFiller(new Monitors\Filler($config['monitorFiller']))
+            ->setMonitorTemplate(new Monitors\Template($config['monitorTemplate']))
+            ->setMonitorTracker(new Monitors\Tracker($config['monitorTracker']));
+
+
+        $monitorProvider
+            ->run();
+
+    } catch (Exception $e) {
+        echo("Error was found: " . $e->getMessage()."\n");
+        return false;
+
+    }
+}
+
+// process single device
+if(count($devices) == 1){
+    addMonitor($devices[0]->deviceName,$config);
+    exit(0);
+}
+
+// process multiple devices
+$TQ = new ThreadQueue("addMonitor");
+$TQ->queueSize = $cmd['threads'];
+
+
+
+foreach($devices as $device){
+    $TQ->add(array($device->deviceName,$config));
+}
+
+while(  count( $TQ->threads() )  ){     // there are existing processes in the background?
+    $TQ->tick();  // mandatory!
+}
+
+

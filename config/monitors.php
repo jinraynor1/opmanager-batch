@@ -4,7 +4,7 @@ return array(
 
     'monitorTracker' => array(
 
-        'database' => __DIR__ . '/database/localStorage.db',
+        'database' => __DIR__ . '/monitors/database/localStorage.db',
         'busyTimeout' => '5000',
         'snmp_hour' => date('Y-m-d H'),
         'snmp_historic_from' => date('Y-m-d H', strtotime("-3 day")),
@@ -117,7 +117,8 @@ return array(
                 ),
 
                 'baseMonitors' => function ($sysDesc) {
-                    return include_once __DIR__ . '/monitors/ciso.php';
+
+                    return include __DIR__ . '/monitors/cisco.php';
                 }
             ),
         'motorola' =>
