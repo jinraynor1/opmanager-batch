@@ -63,12 +63,13 @@ class Provider extends Base
     public function __construct($deviceName, $config ){
 
         $this->deviceName = $deviceName;
-
+        $this->config = $config;
 
         //inicializar ficheros para guardar logs
-        $dirname = __DIR__ . '../../../logs/monitors';
+        $dirname = __DIR__ . '/../../logs/monitors';
 
-        if (!file_exists($dirname) || !is_dir($dirname)) {
+        if (!file_exists($dirname)|| !is_dir($dirname)) {
+
             mkdir($dirname);
         }
 

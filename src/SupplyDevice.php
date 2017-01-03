@@ -3,22 +3,23 @@ namespace Jinraynor1\OpManager\Batch;
 
 use Jinraynor1\OpManager\Api\Main as ApiMain;
 
-
-// columnas del archivo a importar
-define('OPIMPORT_COL_IP', 0); //ip
-define('OPIMPORT_COL_DISPLAYNAME', 1); //cmts
-define('OPIMPORT_COL_VENDOR', 2); //vednor
-define('OPIMPORT_COL_BUSINESSVIEW', 3); //business views
-define('OPIMPORT_COL_CATEGORY', 4); //device category
-define('OPIMPORT_COL_TYPE', 5); //device type
-define('OPIMPORT_COL_MONITORING', 6); //device monitoring
-define('OPIMPORT_COL_NETMASK', 7); //device netmask
-
 /**
  * Supply devices
  */
 class SupplyDevice extends Base
 {
+
+    /**
+     * Position of column at import
+     */
+    const COL_IP = 0;
+    const COL_DISPLAYNAME = 1;
+    const COL_VENDOR = 2;
+    const COL_BUSINESSVIEW = 3;
+    const COL_CATEGORY = 4;
+    const COL_TYPE = 5;
+    const COL_MONITORING = 6;
+    const COL_NETMASK = 7;
     /**
      * Debugging
      * @var bool
@@ -204,13 +205,11 @@ class SupplyDevice extends Base
         if (is_array($vendorList)) {
             $addVendor = array();
 
-            foreach ($this->lines as $_line) {
+            foreach ($this->lines as $line) {
 
-                $lineVendor = str_getcsv($_line);
-
-                if (isset($lineVendor[OPIMPORT_COL_VENDOR]) && trim($lineVendor[OPIMPORT_COL_VENDOR]) != '') {
-                    if (!in_array($lineVendor[OPIMPORT_COL_VENDOR], $vendorList)) {
-                        $addVendor[] = $lineVendor[OPIMPORT_COL_VENDOR];
+                if (isset($line[self::COL_VENDOR]) && trim($line[self::COL_VENDOR]) != '') {
+                    if (!in_array($line[self::COL_VENDOR], $vendorList)) {
+                        $addVendor[] = $line[self::COL_VENDOR];
                     }
                 }
             }
@@ -451,17 +450,16 @@ class SupplyDevice extends Base
     public function run()
     {
 
-        foreach ($this->lines as $_line) {
-            // parser line
-            $line = str_getcsv($_line);
+        foreach ($this->lines as $line) {
+
 
             // flags
             $this->cleared = false;
             $this->failAdd = false;
 
 
-            $this->deviceDisplayName = isset($line[OPIMPORT_COL_DISPLAYNAME]) ? trim($line[OPIMPORT_COL_DISPLAYNAME]) : '';
-            $this->deviceIp = isset($line[OPIMPORT_COL_IP]) ? trim($line[OPIMPORT_COL_IP]) : '';
+            $this->deviceDisplayName = isset($line[self::COL_DISPLAYNAME]) ? trim($line[self::COL_DISPLAYNAME]) : '';
+            $this->deviceIp = isset($line[self::COL_IP]) ? trim($line[self::COL_IP]) : '';
 
 
             // validate
@@ -478,31 +476,31 @@ class SupplyDevice extends Base
 
             // get  business view for this device
             $deviceBusinessView = array();
-            if (isset($line[OPIMPORT_COL_BUSINESSVIEW])) {
-                $deviceBusinessView = array_filter(explode(';', trim($line[OPIMPORT_COL_BUSINESSVIEW])));
+            if (isset($line[self::COL_BUSINESSVIEW])) {
+                $deviceBusinessView = array_filter(explode(';', trim($line[self::COL_BUSINESSVIEW])));
             }
             // get category for this device
             $deviceCategory = $this->default_category;
-            if (isset($line[OPIMPORT_COL_CATEGORY]) && trim($line[OPIMPORT_COL_CATEGORY]) != "") {
-                $deviceCategory = $line[OPIMPORT_COL_CATEGORY];
+            if (isset($line[self::COL_CATEGORY]) && trim($line[self::COL_CATEGORY]) != "") {
+                $deviceCategory = $line[self::COL_CATEGORY];
             }
 
             // get type for this device
             $deviceType = $this->default_type;
-            if (isset($line[OPIMPORT_COL_TYPE]) && trim($line[OPIMPORT_COL_TYPE]) != "") {
-                $deviceType = $line[OPIMPORT_COL_TYPE];
+            if (isset($line[self::COL_TYPE]) && trim($line[self::COL_TYPE]) != "") {
+                $deviceType = $line[self::COL_TYPE];
             }
 
             // get network mask for this device
             $deviceNetmask = $this->default_netmask;
-            if (isset($line[OPIMPORT_COL_NETMASK]) && trim($line[OPIMPORT_COL_NETMASK]) != "") {
-                $deviceNetmask = $line[OPIMPORT_COL_NETMASK];
+            if (isset($line[self::COL_NETMASK]) && trim($line[self::COL_NETMASK]) != "") {
+                $deviceNetmask = $line[self::COL_NETMASK];
             }
 
             // get the monitoring interval for this device
             $deviceMonitoring = $this->default_monitoring;
-            if (isset($line[OPIMPORT_COL_MONITORING]) && trim($line[OPIMPORT_COL_MONITORING]) != "") {
-                $deviceMonitoring = $line[OPIMPORT_COL_MONITORING];
+            if (isset($line[self::COL_MONITORING]) && trim($line[self::COL_MONITORING]) != "") {
+                $deviceMonitoring = $line[self::COL_MONITORING];
             }
 
             // declare the name of the device on opmanager
@@ -604,8 +602,8 @@ class SupplyDevice extends Base
                 $this->paramsDevice['name'] = $this->deviceName;
 
                 // set always the vendor
-                if (isset($line[OPIMPORT_COL_VENDOR]) && trim($line[OPIMPORT_COL_VENDOR]) != '') {
-                    $this->paramsDevice['vendor'] = ucfirst($line[OPIMPORT_COL_VENDOR]);
+                if (isset($line[self::COL_VENDOR]) && trim($line[self::COL_VENDOR]) != '') {
+                    $this->paramsDevice['vendor'] = ucfirst($line[self::COL_VENDOR]);
                 } else {
                     $this->paramsDevice['vendor'] = 'Unknown';//OpManager >= 12 needs this property always set
                 }

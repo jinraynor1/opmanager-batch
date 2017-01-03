@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../../bootstrap.php';
 
 use Jinraynor1\OpManager\Batch\Monitors;
-use Jinraynor1\Threading\ThreadQueue;
+use Jinraynor1\Threading\Pcntl\ThreadQueue;
 
 $cmd = new Commando\Command();
 
@@ -68,7 +68,9 @@ $devices= $base->getDevices();
  * @param $config
  * @return bool
  */
-function addMonitor($device,$config){
+function addMonitor($args){
+    $device=$args['device'];
+    $config=$args['config'];
 
     try {
 
@@ -95,7 +97,10 @@ function addMonitor($device,$config){
 
 // process single device
 if(count($devices) == 1){
-    addMonitor($devices[0]->deviceName,$config);
+    addMonitor(array(
+            'device'=>$devices[0]->deviceName,
+            'config'=>$config)
+    );
     exit(0);
 }
 
@@ -106,7 +111,10 @@ $TQ->queueSize = $cmd['threads'];
 
 
 foreach($devices as $device){
-    $TQ->add(array($device->deviceName,$config));
+    $TQ->add(array(
+        'device'=>$device->deviceName,
+        'config'=>$config
+    ));
 }
 
 while(  count( $TQ->threads() )  ){     // there are existing processes in the background?

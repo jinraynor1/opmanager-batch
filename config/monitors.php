@@ -53,15 +53,16 @@ return array(
         ),
         'thresholds' => array(
             'snr' => array(
-                'troubleVal' => 250,
-                'rearmVal' => 260,
+                'troubleVal' => '',//250
+                'rearmVal' => '',//260
                 'units' => 'dB'
             ),
 
             'modemonlineup' => array(
                 'validate' => function ($snmp_integer) {
-                    return $snmp_integer > 20;
-                    //return true
+                    return true;
+                    //return $snmp_integer > 20;
+
                 },
                 'troubleVal' => function ($snmp_integer) {
                     return '';

@@ -1,6 +1,9 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
 
+use Jinraynor1\OpManager\Batch\SupplyDevice as SupplyDevice;
+use Jinraynor1\Threading\Pcntl\ThreadQueue;
+
 $color = new \Colors\Color();
 $cmd = new Commando\Command();
 
@@ -29,57 +32,46 @@ $cmd->option('type')
         return in_array($type, array('file', 'input'));
     })
     ->describedAs("Type must be one of (file or input)")
-
-
     ->option('file')
     ->needs('type')
     ->expectsFile()
     ->describedAs("File location could be absolute or relative")
-
-
     ->option('row')
     ->needs('type')
     ->describedAs("String line to process like if it was csv")
     ->option('debug')
     ->boolean()
     ->describedAs("Shows verbose output")
-
-
     ->option('delete')
     ->boolean()
     ->describedAs("Delete the device, this is done before adding the file if needed")
-
-
     ->option('add')
     ->boolean()
     ->describedAs("Add the device")
-
     ->option('update')
     ->boolean()
     ->describedAs("Update the device")
-
     ->option('interfaces')
     ->boolean()
     ->describedAs("Discover interface of the device")
-
     ->option('business-views')
     ->boolean()
     ->describedAs("Process business view field")
-
     ->option('threads')
     ->default(1)
-    ->must(function ($threads) use ($cmd){
+    ->must(function ($threads) use ($cmd) {
         return ctype_digit($threads);
     })
-    ->describedAs("Number of threads for this job");;
+    ->describedAs("Number of threads for this job");
 
-// get lines
+
+// start to parse lines
 $lines = array();
 
 // validate required options
 if ($cmd['type'] == 'file') {
 
-    if(!$cmd['file']){
+    if (!$cmd['file']) {
         $error = "ERROR: Required option file must be specified";
         echo $color($error)->bg('red')->bold()->white() . PHP_EOL;
 
@@ -91,7 +83,8 @@ if ($cmd['type'] == 'file') {
     //remove headers
     array_shift($lines);
 
-    if(empty($lines)){
+
+    if (empty($lines)) {
         $error = "ERROR: No valid lines founded on file";
         echo $color($error)->bg('red')->bold()->white() . PHP_EOL;
         exit(1);
@@ -99,7 +92,7 @@ if ($cmd['type'] == 'file') {
 
 } elseif ($cmd['type'] == 'input') {
 
-    if(!$cmd['row']){
+    if (!$cmd['row']) {
         $error = "ERROR: Required option row must be specified";
         echo $color($error)->bg('red')->bold()->white() . PHP_EOL;
         exit(1);
@@ -109,6 +102,36 @@ if ($cmd['type'] == 'file') {
     }
     $lines = $rows;
 }
+
+foreach ($lines as $line) {
+    $lines_array[] = str_getcsv($line);
+}
+
+/**
+ * Filter unique arrays by key
+ * @param $array
+ * @param $key
+ * @return array
+ */
+function unique_multidim_array($array, $key)
+{
+    $temp_array = array();
+    $i = 0;
+    $key_array = array();
+
+    foreach ($array as $val) {
+        if (!in_array($val[$key], $key_array)) {
+            $key_array[$i] = $val[$key];
+            $temp_array[$i] = $val;
+        }
+        $i++;
+    }
+    return $temp_array;
+}
+
+//filter out duplicated ips
+$lines_array = unique_multidim_array($lines_array, SupplyDevice::COL_IP);
+
 
 // build options
 $options = array(
@@ -120,10 +143,47 @@ $options = array(
     'business-views' => $cmd['business-views'],
 );
 
+function supply_device($args)
+{
+    $lines_array=$args['lines'];
+    $options = $args['options'];
 
-try {
-    $obj = new Jinraynor1\OpManager\Batch\SupplyDevice($lines, $options);
-    $obj->run();
-} catch (Exception $e) {
-    echo $e->getMessage() . "\n";
+    try {
+
+        $obj = new SupplyDevice($lines_array, $options);
+        $obj->run();
+
+    } catch (Exception $e) {
+
+        echo $e->getMessage() . "\n";
+    }
+}
+
+
+// process single device
+if (count($lines_array) == 1) {
+    supply_device(array(
+       'lines'=> $lines_array,
+       'options'=> $options
+    ));
+    exit(0);
+}
+
+// process multiple
+$TQ = new ThreadQueue("supply_device");
+$TQ->queueSize = $cmd['threads'];
+
+
+$lines_array_chunk = array_chunk ($lines_array,count($lines_array) / $cmd['threads']);
+
+
+foreach ($lines_array_chunk as $lines_array) {
+    $TQ->add(array(
+        'lines'=> $lines_array,
+        'options'=> $options
+    ));
+}
+
+while (count($TQ->threads())) {     // there are existing processes in the background?
+    $TQ->tick();  // mandatory!
 }
