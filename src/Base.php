@@ -49,7 +49,7 @@ class Base {
             throw new \Exception($response->message);
 
         }else {
-            throw new \Exception("No devices were found");
+            throw new \Exception("No devices were found: ".json_encode($response));
 
         }
 

@@ -1,10 +1,11 @@
 <?php
-require_once __DIR__ . '/../../bootstrap.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 use Jinraynor1\OpManager\Batch\SupplyDevice as SupplyDevice;
 use Jinraynor1\Threading\Pcntl\ThreadQueue;
 
 $color = new \Colors\Color();
+
 $cmd = new Commando\Command();
 
 $cmd->useDefaultHelp();
@@ -12,18 +13,25 @@ $cmd->useDefaultHelp();
 $cmd->setHelp('Add devices to  OpManager, e.g
 
         Add by file:
-                   --type file --file ../archivo.csv
+                   --type file --file ../yourfile.csv
 
         Add by file and set default options :
-                     --type file --file ../archivo.csv --delete --add --update --discover --business-views
+                     --type file --file ../yourfile.csv --delete --add --update --discover --business-views
 
         Add  specifying row:
                     --type input --row "127.0.0.1,localhost,Windows 8,VISTA1;VISTA2,MiCategoria,Mitipo,5,255.255.255.0"
 
         Sample file:
-                    Ip,Name,Vendor,BusinessViews,Category,Type,Monitoring,Netmask
-                    127.0.0.1,localhost,Windows 8,VISTA1;VISTA2,MiCategoria,Mitipo,5,255.255.255.0
-                    192.168.1.1,gestornap,Cisco,VISTA3,Server,Mitipo2,15,255.255.255.0
+
+        |-------------+-----------+-----------+---------------+-------------+---------+------------+---------------|
+        |     Ip      |   Name    |  Vendor   | BusinessViews |  Category   |  Type   | Monitoring |    Netmask    |
+        |-------------+-----------+-----------+---------------+-------------+---------+------------+---------------|
+        |  127.0.0.1  | localhost | Windows 8 | VISTA1;VISTA2 | MiCategoria | Mitipo  |     5      | 255.255.255.0 |
+        |-------------+-----------+-----------+---------------+-------------+---------+------------+---------------|
+        | 192.168.1.1 | gestornap |   Cisco   |    VISTA3     |   Server    | Mitipo2 |     15     | 255.255.255.0 |
+        |-------------+-----------+-----------+---------------+-------------+---------+------------+---------------|
+
+
                     ');
 
 $cmd->option('type')
@@ -174,7 +182,7 @@ $TQ = new ThreadQueue("supply_device");
 $TQ->queueSize = $cmd['threads'];
 
 
-$lines_array_chunk = array_chunk ($lines_array,count($lines_array) / $cmd['threads']);
+$lines_array_chunk = array_chunk ($lines_array,ceil(count($lines_array) / $cmd['threads']));
 
 
 foreach ($lines_array_chunk as $lines_array) {

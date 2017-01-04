@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../../bootstrap.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 use Jinraynor1\OpManager\Batch\Monitors;
 use Jinraynor1\Threading\Pcntl\ThreadQueue;
@@ -46,7 +46,7 @@ $cmd->option('mode')
 ini_set("memory_limit", "512M");
 
 // include config for monitors
-$config = include_once(__DIR__ . '/../../config/monitors.php');
+$config = include_once(__DIR__ . '/../config/monitors.php');
 
 
 

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../bootstrap.php';
+require_once __DIR__ . '/../bootstrap.php';
 
 use Jinraynor1\OpManager\Batch\UpdateInterfacesTemplate;
 
@@ -15,11 +15,15 @@ $cmd->setHelp('Updates the poll interval from interfaces template and apply the 
         ');
 
 $cmd->option('poll-interval')
-    ->default(300)
+    ->require()
     ->describedAs("poll interval value")
+    ->must(function ($value)  {
+        return ctype_digit($value);
+    })
 ;
 
 
+$cmd['poll-interval'];
 
 $obj = new UpdateInterfacesTemplate($cmd['poll-interval']);
 $obj->run();
