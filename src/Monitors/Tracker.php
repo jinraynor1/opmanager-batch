@@ -40,7 +40,7 @@ class Tracker
 
     public function save($deviceName, $current_monitor_oid, $snmp_integer)
     {
-        $query_historic = "INSERT INTO device_snmp_historic(device,date,oid,value) VALUES ( '$deviceName', '$this->snmp_hour','$current_monitor_oid','$snmp_integer' )";
+        $query_historic = "INSERT OR IGNORE INTO device_snmp_historic(device,date,oid,value) VALUES ( '$deviceName', '$this->snmp_hour','$current_monitor_oid','$snmp_integer' )";
         return $this->db->exec($query_historic);
 
     }

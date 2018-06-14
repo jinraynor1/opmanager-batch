@@ -36,7 +36,7 @@ class SupplyDevice extends Base
      * Maximum times we try to add a device if it fails
      * @var int
      */
-    private $try_times = 5;
+    private $try_times = 1;
 
 
     /**
@@ -231,6 +231,7 @@ class SupplyDevice extends Base
      */
     public function addDevice()
     {
+        $try_times=$this->try_times;
         if (!in_array($this->deviceIp, $this->devicesExist)) {
 
                 $this->opimport_dump('add device', $this->paramsDevice);
@@ -258,12 +259,17 @@ class SupplyDevice extends Base
 
                 $this->opimport_msg($resultDeviceAdd['message']);
 
+                // this means already in database
+                if($resultDeviceAdd['error_code']=="5123" || preg_match('/already exists/i', $resultDeviceAdd['error_message'])){
+                    return true;
+                }
                 if (!$resultDeviceAdd['result']) {
                     $this->opimport_msg("$this->deviceDisplayName | error adding the device", "error");
                     $this->failAdd = true;
-                    $this->try_times -= 1;
+                    $try_times -= 1;
                 }
-            } while (preg_match('/error code/i', $resultDeviceAdd['message']) && $this->try_times);
+
+            } while (preg_match('/error code/i', $resultDeviceAdd['message']) && $try_times);
 
             if (!$resultDeviceAdd['result']) {
                 $this->opimport_msg("$this->deviceDisplayName | cannot be added", "error");
@@ -652,14 +658,17 @@ class SupplyDevice extends Base
         }
         //remove new lines
         $str = str_replace("\n", "", $str);
-        echo "$preffix $str\n";
+        echo sprintf("[%s][%s] %s \n",date('Y-m-d H:i:s'),getmypid(),"$preffix $str");
+
     }
 
     function opimport_dump($type, $vars)
     {
         if($this->debug){
             $jsonvars = json_encode($vars);
-            echo "\033[33m[DEBUG]\033[0m $type variables: $jsonvars\n";
+            $message = "\033[33m[DEBUG]\033[0m $type variables: $jsonvars";
+
+            echo sprintf("[%s][%s] %s \n",date('Y-m-d H:i:s'),getmypid(),$message);
         }
     }
 

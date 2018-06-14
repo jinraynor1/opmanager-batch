@@ -20,10 +20,14 @@ $cmd->option('poll-interval')
     ->must(function ($value)  {
         return ctype_digit($value);
     })
+
+
+    ->option('name')
+    ->describedAs("interface name")
 ;
 
 
 $cmd['poll-interval'];
 
-$obj = new UpdateInterfacesTemplate($cmd['poll-interval']);
+$obj = new UpdateInterfacesTemplate($cmd['poll-interval'],$cmd['name']);
 $obj->run();

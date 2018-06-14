@@ -1,4 +1,5 @@
 <?php
+
 namespace Jinraynor1\OpManager\Batch\Monitors;
 
 /**
@@ -6,6 +7,11 @@ namespace Jinraynor1\OpManager\Batch\Monitors;
  * Class MonitorFiller
  * @package Jinraynor1\OpManager\Batch\Monitors
  */
+
+snmp_set_oid_numeric_print(1);
+snmp_set_quick_print(1);
+snmp_set_valueretrieval(SNMP_VALUE_OBJECT);
+
 class Filler
 {
     private $deviceName = null; //done
@@ -131,15 +137,32 @@ class Filler
 
     public function __construct($config)
     {
-
-
         $this->config = $config;
     }
+
+
+    private function isValidSnmp($snmp_object)
+    {
+        if (!$snmp_object) {
+            return false;
+        }
+
+        if (!is_object($snmp_object)) {
+            return false;
+        }
+
+        if ($snmp_object->type == 129) {
+            return false;
+        }
+
+        return true;
+
+    }
+
 
     public function fillBaseMonitors()
     {
 
-        // Agregar monitores extra para el dispositivo
 
         if (!empty($this->_base_monitors)) {
             $this->log("empezando a determinar los monitores base ,cantidad:" . count($this->_base_monitors));
@@ -152,28 +175,18 @@ class Filler
                 $_base_monitor_oid = $_base_monitor['oid'];
 
                 $_base_monitor_function = isset($_base_monitor['function']) ? $_base_monitor['function'] : '';
-
-                if ($_base_monitor_function) {
-                    $_base_monitor_has_function = function_exists($_base_monitor_function);
-                } else {
-                    $_base_monitor_has_function = false;
-                }
+                $_base_monitor_has_function = is_callable($_base_monitor_function);
 
                 $base_monitor_oid = '.' . $_base_monitor_oid . ($_base_monitor_index ? ('.' . $_base_monitor_index) : '');
 
-
-                $command = "snmpwalk -v 2c -c $this->readCommunity $this->deviceName  $base_monitor_oid ";
-                $resultCommand = shell_exec($command);
+                $oid_object = snmp2_get($this->deviceName, $this->readCommunity, $base_monitor_oid);
 
 
-                //  Verificar que exista
-
-                if (preg_match('/[a-z_\-0-9]+:\s([0-9]+)/i', $resultCommand, $resultMatches)) {
+                if ($this->isValidSnmp($oid_object)) {
 
                     if ($_base_monitor_has_function) {
 
-                        $resultValidBaseMonitor = call_user_func_array($_base_monitor_function, array('matches' => $resultMatches[1]));
-
+                        $resultValidBaseMonitor = call_user_func_array($_base_monitor_function, array($oid_object->value));
 
                         $isValidBaseMonitor = $resultValidBaseMonitor['result'];
 
@@ -186,7 +199,7 @@ class Filler
                         }
 
                     } else {
-                        if (isset($resultMatches[1]) && $resultMatches[1] > 0) {
+                        if ($oid_object->value > 0) {
                             $base_monitor_added++;
                         } else {
                             $this->log("monitor base " . $_base_monitor_name . " valor del monitor es cero, no se creara");
@@ -214,16 +227,15 @@ class Filler
                 $this->current_monitor_ids[$base_monitor_name] = $base_monitor_id;
 
 
-              $default_base_monitors =  array(
-                  'graphName' => $base_monitor_name,
-                  'displayName' => $base_monitor_name,
-                  'oid' => $base_monitor_oid,
-                  'id' => $base_monitor_id,
-              );
+                $default_base_monitors = array(
+                    'graphName' => $base_monitor_name,
+                    'displayName' => $base_monitor_name, // not allowed to change it after created
+                    'oid' => $base_monitor_oid,
+                    'id' => $base_monitor_id,
+                );
 
-
-                if(!empty($this->config['graphs']['baseMonitors']) && is_array($this->config['graphs']['baseMonitors'])){
-                        $default_base_monitors =  $this->config['graphs']['baseMonitors'] + $default_base_monitors;
+                if (!empty($this->config['graphs']['baseMonitors']) && is_array($this->config['graphs']['baseMonitors'])) {
+                    $default_base_monitors = $this->config['graphs']['baseMonitors'] + $default_base_monitors;
                 }
 
                 array_push($this->current_monitor_graphs, $default_base_monitors);
@@ -241,15 +253,10 @@ class Filler
     {
 
 
-        // variables para calcular el porcentaje de monitores que vamos actualmente
 
         $cantidadMons = count($this->_monitor_oids);
         $cantidadTot = count($this->_ifs) * $cantidadMons;
 
-
-        $rangeModemOnLineUp = $this->config['rangeModemOnLineUp'];
-
-        // cada 5% del total mostrar mensaje de avance
         $itemPercAt = floor($cantidadTot * 0.05);
         if ($itemPercAt <= 1) {
             $itemPercAt = ceil($cantidadTot * 0.05);
@@ -257,20 +264,20 @@ class Filler
 
         $idxMon = 1;
 
-        // Este bloque determina los oids de los monitores a agregar
 
         foreach ($this->_monitor_oids as $_monitor_oid_tipo => $monitor_oid) {
+
+
+            if (is_callable($monitor_oid))
+                $monitor_oid = $monitor_oid($this->deviceSummary->sysDescr);
 
 
             foreach ($this->_ifs as $ifIndex => $if) {
 
                 $idxMon++;
 
-
-                //Notificar avance
-
                 if ($idxMon % $itemPercAt == 0) {
-                    $porcentajeActual = number_format(($idxMon * 100) / $cantidadTot, 2);
+                    $porcentajeActual = ceil(($idxMon * 100) / $cantidadTot);
                     $this->log("calculando interfaz($_monitor_oid_tipo) $idxMon de $cantidadTot - $porcentajeActual% de las interfaces");
                 }
 
@@ -287,112 +294,49 @@ class Filler
                 }
 
 
-                // Comunmente el OID del monitor es el oid del tipo mas el indice de la interfaz
-                $current_monitor_oid = '.' . $monitor_oid . '.' . $ifIndex;
-
-
-                // Si dispositivo es del vendor Arris y el tipo de monitor es modemonlineup realizar
-                // los siguientes calculos para determinar el OID de cada monitor
-
-                if ($_monitor_oid_tipo == 'modemonlineup' && strtolower($this->deviceSummary->vendorName) == 'arris') {
-
-
-                    //si es modemonlineup entonces realizar snmp walk manual debido a que es un indice/oid dinamico
-
-                    //todo: barrer con snmpwalk
-
-
-                    foreach ($rangeModemOnLineUp as $_rangeModemOnLineUp) {
-
-
-                        $command = "snmpwalk -v 2c -c $this->readCommunity $this->deviceName  $monitor_oid.$_rangeModemOnLineUp.$ifIndex ";
-                        $resultCommand = shell_exec($command);
-
-
-                        //Realizar bucle hasta obtener respuesta
-
-                        if (preg_match('/INTEGER:\s([0-9]+)/i', $resultCommand, $resultMatches)) {
-
-
-                            // Si numero entero obtenido es mayor que cero salir del bucle porque ya encontramos un OID
-                            // valido el cual monitorear
-
-                            if (isset($resultMatches[1]) && $resultMatches[1] > 0) {
-                                break;
-                            }
-
-                        }
-                    }
-
-
-                    // Terminado el bucle de busqueda de OID por rangos verificar por ultima vez si
-                    // se obtuvo respuesta valida
-
-                    if (!preg_match('/INTEGER:\s([0-9]+)/i', $resultCommand, $resultMatches)) {
-                        //$this->log("Interfaz $ifIndex no encontrada en el OID($_monitor_oid_tipo):$monitor_oid");
-
-                        continue;
-                    } else {
-
-                        // Si numero entero obtenido es invalido continuar con el siguiente item del bucle
-                        // ya que solo monitoreamos OID con valores validos
-
-                        if (!isset($resultMatches[1]) || is_null($resultMatches[1])) {
-                            continue;
-                        }
-
-                    }
-
-
-                    $resultFields=explode(' ', $resultCommand);
-                    $resultParts = reset($resultFields);
-                    $OIDparts = (explode('.', $resultParts));
-                    $ifIndexPart = end($OIDparts);
-                    $slotPart = prev($OIDparts);
-
-                    if (!$slotPart) {
-                      //  $this->log("Interfaz $ifIndex no encontrada en el OID($_monitor_oid_tipo):$monitor_oid");
-                        continue;
-                    } else {
-                        $current_monitor_oid = '.' . $monitor_oid . '.' . $slotPart . '.' . $ifIndex;
-                    }
-                } else {
-
-                    //Flujo comun para verificar que existe el monitor
-
-                    $command = "snmpwalk -v 2c -c $this->readCommunity $this->deviceName  $monitor_oid.$ifIndex ";
-                    $resultCommand = shell_exec($command);
-
-                    //Si no existe el oid entonces probar con el siguiente
-                    if (!preg_match('/INTEGER:\s([0-9]+)/i', $resultCommand, $resultMatches)) {
-                        //$this->log("Interfaz $ifIndex no encontrada en el OID($_monitor_oid_tipo):$monitor_oid");
-                        continue;
-                    } else {
-
-                        // Si numero entero obtenido es invalido continuar con el siguiente item del bucle
-                        // ya que solo monitoreamos OID con valores validos
-
-                        if (!isset($resultMatches[1]) || is_null($resultMatches[1])) {
-                            continue;
-                        }
-                    }
-
-
+                if (!is_array($monitor_oid)) {
+                    $monitor_oid = array($monitor_oid);
                 }
 
 
-                $snmp_integer = $resultMatches[1];
+                $oid_object = null;
+                $founded = false;
 
-                //Almacenar el valor snmp
+                foreach ($monitor_oid as $monitor_oid_item) {
+
+                    $oid_object = snmp2_get($this->deviceName, $this->readCommunity, "$monitor_oid_item.$ifIndex");
+
+                    if ($this->isValidSnmp($oid_object)) {
+                        $founded = true;
+                        break;
+                    }
+
+                }
+
+                if (!$founded) {
+                    continue;
+                }
+
+                if (!$this->isValidSnmp($oid_object)) {
+                    continue;
+                }
+
+
+                $current_monitor_oid = '.' . $monitor_oid_item . '.' . $ifIndex;
+
+
+
+                $snmp_integer = $oid_object->value;
+                
+
+                
                 if (!$this->monitorTracker->save($this->deviceName, $current_monitor_oid, $snmp_integer)) {
                     $this->log("No se pudo guardar el snmp historico de $current_monitor_oid " . $this->monitorTracker->getError());
                 };
 
-                //Si el valor snmp actual es 0, revisar si no se debe a una baja temporal
                 if ($snmp_integer <= 0) {
 
 
-                    //Consultar ultimo historico de valores snmp para determinar si estuvo activo
                     $snmp_last_polled_value = $this->monitorTracker->get($this->deviceName, $current_monitor_oid);;
 
                     if ($snmp_last_polled_value === false) {
@@ -401,10 +345,8 @@ class Filler
 
 
                     if (!$snmp_last_polled_value) {
-                        //Si no existe un valor registrado entonces no seguir
                         continue;
                     } else {
-                        //Sobreecribbimos el valor obtenido por uno anterior
                         $snmp_integer = $snmp_last_polled_value;
                     }
 
@@ -429,7 +371,7 @@ class Filler
                     case 'modemonlineup':
                         $validateModem = $this->config['thresholds']['modemonlineup']['validate']($snmp_integer); //invoca funcion
 
-                        if(!$validateModem){
+                        if (!$validateModem) {
                             $this->log("Valor no valido par monitorear, OID: $current_monitor_oid, modemonlineup: $snmp_integer ");
                             //si no es valido saltamos a las siguiente iteracion
                             continue(2);
@@ -459,19 +401,17 @@ class Filler
                     'id' => $current_monitor_id,
                     'troubleVal' => $troubleVal,
                     'rearmVal' => $rearmVal,
-                    );
+                );
 
 
-
-                if(!empty($this->config['graphs']['childMonitors']) && is_array($this->config['graphs']['childMonitors'])){
-                    $default_monitors =  $this->config['graphs']['childMonitors'] + $default_monitors;
+                if (!empty($this->config['graphs']['childMonitors']) && is_array($this->config['graphs']['childMonitors'])) {
+                    $default_monitors = $this->config['graphs']['childMonitors'] + $default_monitors;
                 }
 
-                array_push($this->current_monitor_graphs,$default_monitors);
+                array_push($this->current_monitor_graphs, $default_monitors);
 
 
             }
-
 
         }
 

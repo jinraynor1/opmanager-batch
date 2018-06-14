@@ -16,11 +16,33 @@ return array(
     array('name' => 'CMTS-cpu-slot14', 'oid' => '1.3.6.1.4.1.4981.1.20.1.1.1.9.14.1'),
 
 //OID rdnSensorValue 1.3.6.1.4.1.4981.5.1.1.4
+    //Tecnología Docsis 2x8
     array('name' => 'CMTS-Temp-slot1', 'oid' => '1.3.6.1.4.1.4981.5.1.1.4.1'),
     array('name' => 'CMTS-Temp-slot2', 'oid' => '1.3.6.1.4.1.4981.5.1.1.4.2'),
     array('name' => 'CMTS-Temp-slot3', 'oid' => '1.3.6.1.4.1.4981.5.1.1.4.3'),
     array('name' => 'CMTS-Temp-slot4', 'oid' => '1.3.6.1.4.1.4981.5.1.1.4.4'),
     array('name' => 'CMTS-Temp-slot5', 'oid' => '1.3.6.1.4.1.4981.5.1.1.4.5'),
+
+    // Tecnología Docsis RX48
+    array('name' => 'SRM10 TIMING - slot 8', 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.8.1'),
+    array('name' => 'SRM10 ICP - slot 8'   , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.8.2'),
+    array('name' => 'SRM10 CPU - slot 8'   , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.8.3'),
+    array('name' => 'SRM10 DC2DC - slot 8' , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.8.4'),
+    array('name' => 'SRM10 CAM - slot 8'   , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.8.5'),
+    array('name' => 'HSIM10 CPU - slot 8'  , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.8.6'),
+    array('name' => 'HSIM10 EFPGA - slot 8', 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.8.7'),
+    array('name' => 'Top Fan - slot 8'     , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.8.8'),
+
+
+    array('name' => 'SRM10 TIMING - slot 9', 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.9.1'),
+    array('name' => 'SRM10 ICP - slot 9'   , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.9.2'),
+    array('name' => 'SRM10 CPU - slot 9'   , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.9.3'),
+    array('name' => 'SRM10 DC2DC - slot 9' , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.9.4'),
+    array('name' => 'SRM10 CAM - slot 9'   , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.9.5'),
+    array('name' => 'HSIM10 CPU - slot 9'  , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.9.6'),
+    array('name' => 'HSIM10 EFPGA - slot 9', 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.9.7'),
+    array('name' => 'Top Fan - slot 9'     , 'oid' => '1.3.6.1.4.1.4981.5.1.2.4.9.8'),
+
 
 // OID     rdnOnlineModemCount     1.3.6.1.4.1.4981.1.10.1.6
     array('name' => 'CMTS-Slot-1', 'oid' => '1.3.6.1.4.1.4981.1.10.1.6.1'),

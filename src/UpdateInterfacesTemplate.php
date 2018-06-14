@@ -13,11 +13,33 @@ class UpdateInterfacesTemplate extends Base
 {
 
     private $poll_interval = 300;
+    private $name = null;
+    public function __construct($poll_interval, $name)
+    {
+        if ($poll_interval) {
+            $this->poll_interval = $poll_interval;
+        }
 
+        if ($name) {
+            $this->name = $name;
+        }
+
+
+
+
+    }
     public function run(){
 
-        $interfaceTemplates= ApiMain::dispatcher('listInterfaceTemplates');
+        $interfaceTemplates= ApiMain::dispatcher('listInterfaceTemplates',array(
+            'showMode'=>'allInterfaces'
+        ));
 
+
+        if(!$interfaceTemplates || isset($interfaceTemplates->error->message) ){
+            $error=isset($interfaceTemplates->error->message)?$interfaceTemplates->error->message:"Empty";
+            echo sprintf("Error fetching device templates: %s\n",$error);
+            return false;
+        }
         $intfsUpdated=array();
 
         #$regexItf= '/docs[\s]+cable/i';
@@ -35,7 +57,7 @@ class UpdateInterfacesTemplate extends Base
 
         foreach($interfaceTemplates as $interfaceTemplate){
 
-            if(isset($regexItf) && $regexItf &&  !preg_match($regexItf,$interfaceTemplate->ifname)){
+            if($this->name && $this->name != $interfaceTemplate->ifname){
                 continue;
             }
 
@@ -100,7 +122,10 @@ class UpdateInterfacesTemplate extends Base
 
         }
         if(!empty($intfsUpdated)) {
-            echo "Se  actualizaron plantillas de interfaces ".($regexItf?"usando el patron $regexItf":'').": \n" .implode(',',$intfsUpdated)."\n";
+            echo sprintf("Template devices updated, interval:%s ,interfaces: %s\n",
+                    $this->poll_interval,
+                    implode(',',$intfsUpdated)
+            );
 
         }
     }

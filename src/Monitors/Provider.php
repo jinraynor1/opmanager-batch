@@ -13,7 +13,6 @@ use Jinraynor1\OpManager\Batch\Base;
  * @version    1.1
  *
  */
-
 class Provider extends Base
 
 {
@@ -25,10 +24,10 @@ class Provider extends Base
     protected $logHandler;
     protected $config;
 
-    private $monitorOids=array();
-    private $hasBaseTemplate=false;
-    private $ifTypes=array();
-    private $ifs=array();
+    private $monitorOids = array();
+    private $hasBaseTemplate = false;
+    private $ifTypes = array();
+    private $ifs = array();
     private $baseMonitors = array();
 
 
@@ -37,30 +36,34 @@ class Provider extends Base
 
     private $threads = 1;
 
-    /** @var MonitorFiller */
+    /** @var Filler */
     private $monitorFiller;
-    /** @var MonitorTemplate */
+    /** @var Template */
     private $monitorTemplate;
-    /** @var MonitorTracker */
+    /** @var Tracker */
     private $monitorTracker;
 
-    public function setMonitorFiller($monitorFiller){
+    public function setMonitorFiller($monitorFiller)
+    {
         $this->monitorFiller = $monitorFiller;
         return $this;
     }
-    public function setMonitorTemplate($monitorTemplate){
+
+    public function setMonitorTemplate($monitorTemplate)
+    {
         $this->monitorTemplate = $monitorTemplate;
         return $this;
     }
 
-    public function setMonitorTracker($monitorTracker){
-        $this->monitorTracker=$monitorTracker;
+    public function setMonitorTracker($monitorTracker)
+    {
+        $this->monitorTracker = $monitorTracker;
         return $this;
     }
 
 
-
-    public function __construct($deviceName, $config ){
+    public function __construct($deviceName, $config)
+    {
 
         $this->deviceName = $deviceName;
         $this->config = $config;
@@ -68,7 +71,7 @@ class Provider extends Base
         //inicializar ficheros para guardar logs
         $dirname = __DIR__ . '/../../logs/monitors';
 
-        if (!file_exists($dirname)|| !is_dir($dirname)) {
+        if (!file_exists($dirname) || !is_dir($dirname)) {
 
             mkdir($dirname);
         }
@@ -83,11 +86,11 @@ class Provider extends Base
     {
 
 
-        if(!is_object($this->monitorFiller)){
+        if (!is_object($this->monitorFiller)) {
             throw new \Exception("Debes invocar al metodo setMonitorFiller");
         }
 
-        if(!is_object($this->monitorTemplate)){
+        if (!is_object($this->monitorTemplate)) {
             throw new \Exception("Debes invocar al metodo setmonitorTemplate");
         }
 
@@ -101,15 +104,12 @@ class Provider extends Base
             return false;
         }
 
-       //refrescar poleos
+        //refrescar poleos
         $this->monitorTracker->refresh($this->deviceName);
 
 
         //fijar resumen del dispositivo
         $this->deviceSummary = ApiMain::dispatcher('getDeviceSummary', array('name' => $this->deviceName));
-
-
-
 
 
         if ($this->validateSummary() === false) {
@@ -138,11 +138,10 @@ class Provider extends Base
 
         //fija las interfaces a la cual agregar monitores
 
-        if ($this->filterInterfaces()=== false) {
+        if ($this->filterInterfaces() === false) {
             $this->log("Fallo al fijar interfaces");
             return false;
         }
-
 
 
         //Fijar valores para la plantilla
@@ -151,7 +150,8 @@ class Provider extends Base
         $this->monitorTemplate->setBaseTemplate($this->hasBaseTemplate);
         $this->monitorTemplate->setSysOID($this->sysOID);
 
-        $graphNames=$this->monitorTemplate->getGraphNames();
+        $graphNames = $this->monitorTemplate->getGraphsFromDeviceTemplate();
+        $this->log("default graph names: ".json_encode($graphNames));
 
 
         //Fijar valores para el poller de monitores
@@ -189,7 +189,6 @@ class Provider extends Base
         $currentMonitorGraphs = $this->monitorFiller->getCurrentMonitorGraphs();
 
 
-
         //Pasa a la plantilla los monitores
         $this->monitorTemplate->setCurrentMonitorIds($currentMonitorIds);
         $this->monitorTemplate->setCurrentMonitorGraphs($currentMonitorGraphs);
@@ -224,16 +223,16 @@ class Provider extends Base
 
         $this->ifTypes = $this->config[$this->vendor_device]['ifTypes'];
 
-        if(isset($this->config[$this->vendor_device]['baseTemplate']) ){
+        if (isset($this->config[$this->vendor_device]['baseTemplate'])) {
             $this->hasBaseTemplate = $this->config[$this->vendor_device]['baseTemplate'];
         }
 
 
-        if(isset($this->config[$this->vendor_device]['baseMonitors'])){
+        if (isset($this->config[$this->vendor_device]['baseMonitors'])) {
 
-           $baseMonitors=$this->config[$this->vendor_device]['baseMonitors']($this->deviceSummary->sysDescr);
+            $baseMonitors = $this->config[$this->vendor_device]['baseMonitors']($this->deviceSummary->sysDescr);
 
-            if($baseMonitors === false ){
+            if ($baseMonitors === false) {
                 $this->log("No se pudo obtener monitores base del dispositivo con descripcion " . $this->deviceSummary->sysDescr);
                 return false;
             }
@@ -265,14 +264,14 @@ class Provider extends Base
         }
 
         if (!in_array(strtolower($this->deviceSummary->vendorName), array_keys($this->config))) {
-            $this->log("el vendor ".$this->deviceSummary->vendorName." del dispositivo no pertenece a uno de los vendors contemplados: " . implode(',', array_keys($this->config)));
+            $this->log("el vendor " . $this->deviceSummary->vendorName . " del dispositivo no pertenece a uno de los vendors contemplados: " . implode(',', array_keys($this->config)));
             return false;
         }
 
         $vendor_device = strtolower($this->deviceSummary->vendorName);
 
         if (!isset($this->config[$vendor_device])) {
-            $this->log("El Vendor: (".$vendor_device.") no esta contemplado");
+            $this->log("El Vendor: (" . $vendor_device . ") no esta contemplado");
             return false;
         }
 
@@ -313,7 +312,7 @@ class Provider extends Base
 
             foreach ($credentialsList->snmp as $_credential) {
 
-                $this->log("obteniendo detalle de credencial ".$_credential->credentialName);
+                $this->log("obteniendo detalle de credencial " . $_credential->credentialName);
 
                 $credentialDetails = ApiMain::dispatcher('getCredentialDetails', array('credentialName' => $_credential->credentialName, 'type' => $_credential->type));
 
@@ -363,7 +362,7 @@ class Provider extends Base
             return false;
         }
 
-        $this->log("se obtuvo el oid: ".$this->sysOID." y comunidad: ".$this->readCommunity." para el dispositivo");
+        $this->log("se obtuvo el oid: " . $this->sysOID . " y comunidad: " . $this->readCommunity . " para el dispositivo");
 
         return true;
     }
@@ -382,12 +381,12 @@ class Provider extends Base
 
         if (empty($resultCommandChkSysName)) {
 
-            $this->log("Sin respuesta al verificar el nombre del sistema, comando: ".$commandChkSysName);
+            $this->log("Sin respuesta al verificar el nombre del sistema, comando: " . $commandChkSysName);
             return false;
         } else {
 
             if (preg_match('/timeout/i', $resultCommandChkSysName[0])) {
-                $this->log("Timeout al verificar el nombre del sistema, comando: ".$commandChkSysName);
+                $this->log("Timeout al verificar el nombre del sistema, comando: " . $commandChkSysName);
                 return false;
             } else {
 
@@ -396,7 +395,7 @@ class Provider extends Base
 
                 if (!empty($matchesSysName) && isset($matchesSysName[1])) {
                     $sysName = $matchesSysName[1];
-                    $this->log(" Nombre del sistema obtenido por snmpwalk: ".$sysName);
+                    $this->log(" Nombre del sistema obtenido por snmpwalk: " . $sysName);
 
                 } else {
                     $this->log("No se pudo obtener el nombre del sistema de la cadena: " . $resultCommandChkSysName[0]);
@@ -408,17 +407,16 @@ class Provider extends Base
         }
 
         if ($this->deviceSummary->sysName != $sysName) {
-            $this->log("El nombre de sistema obtenido por OpManager es: ".$this->deviceSummary->sysName." y el obtenido por SNMP es: ".$sysName.", deben ser iguales");
+            $this->log("El nombre de sistema obtenido por OpManager es: " . $this->deviceSummary->sysName . " y el obtenido por SNMP es: " . $sysName . ", deben ser iguales");
             return false;
         }
 
 
-        $this->log(" Nombre de sistema iguales: (".$this->deviceSummary->sysName.",".$sysName.")");
+        $this->log(" Nombre de sistema iguales: (" . $this->deviceSummary->sysName . "," . $sysName . ")");
 
         return true;
 
     }
-
 
 
     /**
@@ -434,19 +432,23 @@ class Provider extends Base
 
         if (empty($interfaces) || !is_array($interfaces)) {
             $this->log("no existen interfaces");
+            return false;
+        }
 
-        } else {
 
-            foreach ($interfaces as $interface) {
+        $expected_iftypes_list_lowercase =  array_map('strtolower',$this->ifTypes);
+        $interface_types_count = array_fill_keys($expected_iftypes_list_lowercase, 0);
 
-                // Si interfaz es del tipo esperado, alimentar la matriz de interfaces a consultar
+        foreach ($interfaces as $interface) {
 
-                if (is_object($interface) && isset($interface->ifType)
+            if (!is_object($interface) || !isset($interface->ifType))
+                continue;
 
-                    && in_array(strtolower($interface->ifType), $this->ifTypes)
-                ) {
-                    $ifs[$interface->ifIndex] = $interface->displayName;
-                }
+            $current_iftype_lowercase = strtolower($interface->ifType);
+
+            if( in_array($current_iftype_lowercase, $expected_iftypes_list_lowercase)){
+                $ifs[$interface->ifIndex] = $interface->displayName;
+                $interface_types_count[$current_iftype_lowercase] += 1;
             }
         }
 
@@ -456,19 +458,14 @@ class Provider extends Base
         }
 
         $this->log("Se encontraron: " . count($ifs) . " interfaces");
+        $this->log("Tipos de interfaces: " . json_encode($interface_types_count));
 
-
-
-        $this->ifs= $ifs;
+        $this->ifs = $ifs;
 
         return true;
 
 
     }
-
-
-
-
 
 
 }

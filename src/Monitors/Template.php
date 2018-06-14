@@ -306,7 +306,7 @@ class Template{
 
                     $this->log("consultando matriz de nombres de graficas");
 
-                    $_graphName = $this->getGraphNames();
+                    $_graphName = $this->getGraphsFromDeviceTemplate();
 
 
 
@@ -336,12 +336,12 @@ class Template{
                 $this->paramsTemplate['graphID'] = implode(',', $graphIds);//La api espera todos los ids
                 $this->paramsTemplate['graphObj'] = json_encode(array('dataArray' => $block_graphs));//Pero si podemos especificar un bloque =D exito!
 
+                $this->log("actualizando plantilla");
+                //$this->log("parametros: " . print_r($this->paramsTemplate,true));
 
                 // Cuando se actualizan valores de las plantillas no hay problemas de sysOID
 
                 $responseTemplate = ApiMain::dispatcher('updateDeviceTemplate', $this->paramsTemplate);
-
-                $this->log("actualizando plantilla");
 
                 if (is_null($responseTemplate) || !$responseTemplate) {
                     $this->log("sin respuesta al actualizar plantilla");
@@ -454,6 +454,34 @@ class Template{
 
     }
 
+    public function getGraphsFromDeviceTemplate(){
+
+        $graphs = array();
+
+
+        if(!isset($this->deviceSummary) || !isset($this->deviceSummary->type) || !isset($this->deviceSummary->category)){
+            throw new Exception("debes invocar al metodo setDeviceSummary con el objeto describiendo el dispositivo antes de llamar a getGraphsFromDeviceTemplate");
+        }
+        $graph_details = ApiMain::dispatcher('viewDeviceTemplate', array(
+             'typeID' => $this->deviceSummary->type));
+
+        if (is_object($graph_details) && isset($graph_details->error)) {
+            $error="error al consultar , error code: " . $graph_details->error->code . ', error message: ' . $graph_details->error->message;
+            $this->log($error);
+            throw new Exception($error);
+            return false;
+        }
+
+        if(!empty($graph_details->configData) || !empty($graph_details->configData->graphDetails)){
+            foreach($graph_details->configData->graphDetails as $graphDetail){
+                $graphs[$graphDetail->graphName] = $graphDetail->id;
+            }
+        }
+
+
+            return $graphs;
+
+    }
     /**
      * obtiene las graficas de monitores
      * @return array

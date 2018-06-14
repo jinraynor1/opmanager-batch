@@ -26,6 +26,22 @@ return array(
     array('name' => 'CMTS-Temp-slot18', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.19', 'function' => $arrisCmtsTempFunction),
     array('name' => 'CMTS-Temp-slot19', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.20', 'function' => $arrisCmtsTempFunction),
     array('name' => 'CMTS-Temp-slot20', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.21', 'function' => $arrisCmtsTempFunction),
+
+
+    array('name' => 'CMTS-Temp-slot21', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.22', 'function' => $arrisCmtsTempFunction),
+    array('name' => 'CMTS-Temp-slot34', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.35', 'function' => $arrisCmtsTempFunction),
+    array('name' => 'CMTS-Temp-slot35', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.36', 'function' => $arrisCmtsTempFunction),
+    array('name' => 'CMTS-Temp-slot36', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.37', 'function' => $arrisCmtsTempFunction),
+    array('name' => 'CMTS-Temp-slot37', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.38', 'function' => $arrisCmtsTempFunction),
+    array('name' => 'CMTS-Temp-slot50', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.51', 'function' => $arrisCmtsTempFunction),
+    array('name' => 'CMTS-Temp-slot51', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.52', 'function' => $arrisCmtsTempFunction),
+    array('name' => 'CMTS-Temp-slot52', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.53', 'function' => $arrisCmtsTempFunction),
+    array('name' => 'CMTS-Temp-slot60', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.61', 'function' => $arrisCmtsTempFunction),
+    array('name' => 'CMTS-Temp-slot61', 'oid' => '1.3.6.1.4.1.4998.1.1.10.1.4.2.1.29', 'ifIndex' => '1.62', 'function' => $arrisCmtsTempFunction),
+
+
+
+
     array('name' => 'CMTS-cpu-slot0', 'oid' => '1.3.6.1.4.1.4998.1.1.5.3.1.1.1.8', 'ifIndex' => '1', 'function' => $arrisCmtsCpuFunction),
     array('name' => 'CMTS-cpu-slot1', 'oid' => '1.3.6.1.4.1.4998.1.1.5.3.1.1.1.8', 'ifIndex' => '2', 'function' => $arrisCmtsCpuFunction),
     array('name' => 'CMTS-cpu-slot2', 'oid' => '1.3.6.1.4.1.4998.1.1.5.3.1.1.1.8', 'ifIndex' => '3', 'function' => $arrisCmtsCpuFunction),
